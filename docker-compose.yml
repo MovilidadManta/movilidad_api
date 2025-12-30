@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: api-app
+    container_name: api-app
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    networks:
+      - movilidad_api_custom
+  
+  web:
+    image: nginx:alpine
+    container_name: api-web
+    restart: unless-stopped
+    ports:
+      - "8015:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./public/ssl/certificate.crt:/etc/nginx/ssl/certificate.crt
+      - ./public/ssl/private.key:/etc/nginx/ssl/private.key
+      - .:/var/www/html/public
+    depends_on:
+      - app
+    networks:
+      movilidad_api_custom:
+        ipv4_address: 172.21.0.10 # IP específica para este contenedor
+
+volumes:
+  db_data:
+
+networks:
+  movilidad_api_custom:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16

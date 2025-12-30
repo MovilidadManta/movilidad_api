@@ -1,0 +1,49 @@
+FROM php:8.2-apache
+
+# Instalar dependencias y extensiones necesarias
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    zip \
+    unzip \
+    libpq-dev \
+    curl \
+    iputils-ping \
+    net-tools \
+    traceroute \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd pdo_pgsql opcache \
+    && a2enmod rewrite
+
+# Configurar OPcache
+COPY ./php.ini /usr/local/etc/php/conf.d/opcache.ini
+
+# Configurar Apache
+COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
+
+# Crear y copiar el script para modificar /etc/hosts
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Configurar directorio de trabajo
+WORKDIR /var/www/html
+
+# Copiar el código fuente
+COPY . /var/www/html
+
+# Instalar Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Instalar dependencias PHP con Composer
+RUN composer install
+
+# Establecer permisos adecuados en el directorio de trabajo
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Exponer el puerto 80
+EXPOSE 80
+
+# Configurar el script de inicio
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["apache2-foreground"]

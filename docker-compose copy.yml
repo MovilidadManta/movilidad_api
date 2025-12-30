@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: movilidad-api
+    container_name: movilidad-api
+    restart: unless-stopped
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8015:80"
+    networks:
+      movilidad_api_custom:
+        ipv4_address: 172.21.0.10 # IP específica para este contenedor
+
+volumes:
+  db_data:
+
+networks:
+  movilidad_api_custom:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.21.0.0/16
